@@ -3,6 +3,7 @@
  * Plugin Name: Content List
  * Description: Creates post/page content list and inserts it before content
  * Author: FurryCat
+ * Author URI: http://portfolio.furrycat.ru/
  * Version: 1.0
  * Text Domain: contentlistl10n
  * Domain Path: /lang
