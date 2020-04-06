@@ -89,6 +89,29 @@ function content_list_meta_box_view($post) {
   <?php
 }
 
+function handleHeader($dom, $header, $isRoot) {
+  $text = $header->textContent;
+  $line = $header->getLineNo();
+
+  $headerData =  [
+    'text' => $text,
+    'id' => translit($text).'-'.$line,
+    'root' => $isRoot,
+    'line' => $line
+  ];
+
+  $header->setAttribute('data-anchored', '');
+  $children = $header->childNodes;
+  $anchor = $dom->createElement('a');
+  $anchor->setAttribute('class', 'anchor');
+  $anchor->setAttribute('href', '#'.$headerData['id']);
+  $anchor->setAttribute('data-text', $headerData['text']);
+  $anchor->setAttribute('name', $headerData['id']);
+  $header->insertBefore($anchor, $children[0]);
+
+  return $headerData;
+}
+
 function content_list_view($content) {
   if (!is_singular()) return $content;
 
@@ -108,40 +131,16 @@ function content_list_view($content) {
 
   $headersList = [];
 
-  function createAnchor($dom, $header, $headerData) {
-    $header->setAttribute('data-anchored', '');
-    $children = $header->childNodes;
-    $anchor = $dom->createElement('a');
-    $anchor->setAttribute('class', 'anchor');
-    $anchor->setAttribute('href', '#'.$headerData['id']);
-    $anchor->setAttribute('data-text', $headerData['text']);
-    $anchor->setAttribute('name', $headerData['id']);
-    $header->insertBefore($anchor, $children[0]);
+  if (!empty($headersLvl1)) {
+    foreach($headersLvl1 as $header) {
+      $headersList[] = handleHeader($dom, $header, true);
+    }
   }
 
-  function getHeaderData($header, $isRoot) {
-    $text = $header->textContent;
-    $line = $header->getLineNo();
-
-    return [
-      'text' => $text,
-      'id' => translit($text).'-'.$line,
-      'root' => $isRoot,
-      'line' => $line
-    ];
-  }
-
-  foreach($headersLvl1 as $header) {
-    $headerData = getHeaderData($header, true);
-    createAnchor($dom, $header, $headerData);
-    $headersList[] = $headerData;
-  }
-
-  foreach($headersLvl2 as $header) {
-    $headerData = getHeaderData($header, false);
-    createAnchor($dom, $header, $headerData);
-
-    if (!$isOneLevel) $headersList[] = $headerData;
+  if (!empty($headersLvl2)) {
+    foreach($headersLvl2 as $header) {
+      $headersList[] = handleHeader($dom, $header, false);
+    }
   }
 
   if (!$contentlistVisible) return $content;
