@@ -116,6 +116,8 @@ function content_list_view($content) {
   if (!is_singular()) return $content;
 
   global $post;
+  global $sublists;
+
   $postId = $post->ID;
   $contentlistVisible = get_post_meta($postId, 'contentlist_need', true );
   $isOneLevel = get_post_meta($postId, 'contentlist_one_level', 1);
@@ -127,20 +129,18 @@ function content_list_view($content) {
   libxml_use_internal_errors(false);
 
   $headersLvl1 = $dom->getElementsByTagName('h2');
-  $headersLvl2 = $dom->getElementsByTagName('h3');
 
+  if (!$headersLvl1->length) return $content;
+
+  $headersLvl2 = $dom->getElementsByTagName('h3');
   $headersList = [];
 
-  if (!empty($headersLvl1)) {
-    foreach($headersLvl1 as $header) {
-      $headersList[] = handleHeader($dom, $header, true);
-    }
+  foreach($headersLvl1 as $header) {
+    $headersList[] = handleHeader($dom, $header, true);
   }
 
-  if (!empty($headersLvl2)) {
-    foreach($headersLvl2 as $header) {
-      $headersList[] = handleHeader($dom, $header, false);
-    }
+  foreach($headersLvl2 as $header) {
+    $headersList[] = handleHeader($dom, $header, false);
   }
 
   if (!$contentlistVisible) return $content;
@@ -150,7 +150,7 @@ function content_list_view($content) {
   });
 
   $list = [];
-  global $sublists;
+
   $sublists = [];
 
   $currentRoot = null;
@@ -166,20 +166,6 @@ function content_list_view($content) {
     }
   }
 
-  function createListItem($header) {
-    global $sublists;
-    $link = "<a href='#{$header['id']}'>{$header['text']}</a>";
-    $items = $sublists[$header['id']];
-    if (empty($items)) return "<li class='contentlist__item contentlist__root'>$link</li>";
-
-    $items = array_map(function($item) {
-      return "<li class='contentlist__item'><a href='#{$item['id']}'>{$item['text']}</a></li>";
-    }, $items);
-    $sublist = "<ul class='contentlist__sublist'>".implode('', $items)."</ul>";
-
-    return "<li class='contentlist__item contentlist__root'>{$link}{$sublist}</li>";
-  }
-
   $list = array_map('createListItem', $list);
 
   $listHTML = "<section class='contentlist' id='_contentlist'>
@@ -187,4 +173,18 @@ function content_list_view($content) {
     <ul class='contentlist__list'>".implode('', $list)."</ul></section>";
 
   return $listHTML.$dom->saveHTML();
+}
+
+function createListItem($header) {
+  global $sublists;
+  $link = "<a href='#{$header['id']}'>{$header['text']}</a>";
+  $items = $sublists[$header['id']];
+  if (empty($items)) return "<li class='contentlist__item contentlist__root'>$link</li>";
+
+  $items = array_map(function($item) {
+    return "<li class='contentlist__item'><a href='#{$item['id']}'>{$item['text']}</a></li>";
+  }, $items);
+  $sublist = "<ul class='contentlist__sublist'>".implode('', $items)."</ul>";
+
+  return "<li class='contentlist__item contentlist__root'>{$link}{$sublist}</li>";
 }
